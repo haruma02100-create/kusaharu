@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Smash Bros 2.5D - Final Polish</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        canvas { display: block; }
+        
+        #ui {
+            position: absolute; bottom: 20px; left: 0; width: 100%;
+            display: flex; justify-content: space-around; pointer-events: none;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .fighter-ui {
+            background: rgba(0, 0, 0, 0.75); padding: 15px; border-radius: 15px;
+            border: 2px solid #fff; width: 220px; text-align: center;
+            backdrop-filter: blur(8px); transition: 0.1s;
+        }
+
+        .p1-ui { border-color: #00f; color: #aaf; box-shadow: 0 0 15px rgba(0,0,255,0.4); }
+        .p2-ui { border-color: #f00; color: #faa; box-shadow: 0 0 15px rgba(255,0,0,0.4); }
+
+        .name { font-size: 18px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
+        .damage { font-size: 38px; font-weight: 900; font-style: italic; }
+        .stocks { font-size: 16px; margin-top: 5px; color: #fff; letter-spacing: 3px; }
+        .shield-bar-container { width: 100%; height: 4px; background: #333; margin-top: 8px; border-radius: 2px; overflow: hidden; }
+        .shield-bar { height: 100%; background: #0f0; width: 100%; transition: 0.1s; }
+
+        #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(40,20,40,0.95) 0%, rgba(0,0,0,1) 100%);
+            color: white; display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 100; overflow-y: auto; padding: 20px; box-sizing: border-box;
+        }
+
+        .menu-container {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 40px; border-radius: 40px; border: 1px solid rgba(255,255,255,0.1);
+            text-align: center; width: 95%; max-width: 1100px;
+            box-shadow: 0 0 100px rgba(0,0,0,0.8);
+        }
+
+        .section { margin-bottom: 25px; }
+        .mode-select { display: flex; gap: 20px; justify-content: center; margin-top: 10px; }
+        .mode-btn { 
+            padding: 14px 40px; background: #1a1a1a; border: 2px solid #444; 
+            color: white; cursor: pointer; border-radius: 12px; transition: 0.3s;
+            font-weight: 900; letter-spacing: 1px;
+        }
+        .mode-btn.selected { background: #e61e25; border-color: #fff; transform: scale(1.08); box-shadow: 0 0 20px rgba(230,30,37,0.5); }
+
+        .selection-grid { display: flex; justify-content: space-around; gap: 30px; flex-wrap: wrap; }
+        .player-box { background: rgba(0,0,0,0.5); padding: 20px; border-radius: 20px; flex: 1; min-width: 340px; border: 1px solid #333; }
+
+        .char-select { display: flex; gap: 12px; justify-content: center; margin-top: 15px; flex-wrap: wrap; }
+        .char-card {
+            width: 95px; padding: 12px; background: #222; border: 2px solid #333;
+            border-radius: 15px; cursor: pointer; transition: 0.2s; font-size: 12px;
+            text-align: center; position: relative;
+        }
+        .char-card:hover { transform: translateY(-5px) scale(1.05); border-color: #e61e25; }
+        .p1-box .char-card.selected { border-color: #00f; background: #000044; box-shadow: 0 0 20px #00f; }
+        .p2-box .char-card.selected { border-color: #f00; background: #440000; box-shadow: 0 0 20px #f00; }
+
+        .char-preview { width: 100%; height: 60px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; }
+
+        .move-list {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 30px;
+            text-align: left; background: rgba(0,0,0,0.6); padding: 25px; border-radius: 20px;
+            font-size: 13px; margin-top: 25px; border: 1px solid #444;
+        }
+        .move-col h4 { margin: 0 0 12px 0; color: #e61e25; border-bottom: 2px solid #e61e25; display: inline-block; font-size: 16px; }
+        .move-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #222; }
+        .key { color: #fff; font-weight: bold; background: #444; padding: 2px 8px; border-radius: 4px; font-family: monospace; box-shadow: inset 0 -2px 0 #000; }
+        .key-spec { background: #e61e25; }
+
+        #start-btn {
+            margin-top: 40px; padding: 20px 100px; font-size: 32px; font-weight: 900;
+            background: #e61e25; color: white; border: none; border-radius: 70px;
+            cursor: pointer; box-shadow: 0 15px 40px rgba(230,30,37,0.5); transition: 0.3s;
+            text-transform: uppercase; letter-spacing: 3px; font-style: italic;
+        }
+        #start-btn:hover { transform: scale(1.05) translateY(-5px); background: #ff2b34; }
+        
+        #game-over {
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.98); color: white; padding: 70px; text-align: center;
+            border: 5px solid #e61e25; z-index: 200; border-radius: 40px; box-shadow: 0 0 200px rgba(230,30,37,0.3);
+        }
+
+        /* Smash Effects */
+        .ko-flash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff; pointer-events: none; opacity: 0; z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div class="fighter-ui p1-ui">
+            <div class="name" id="p1-name-ui">PLAYER 1</div>
+            <div class="damage" id="p1-damage">0%</div>
+            <div id="p1-cooldown" style="font-size: 13px; color: #0ff; height: 18px; font-weight: bold;">READY</div>
+            <div class="shield-bar-container"><div id="p1-shield-bar" class="shield-bar"></div></div>
+            <div class="stocks" id="p1-stocks">● ● ●</div>
+        </div>
+        <div class="fighter-ui p2-ui">
+            <div class="name" id="p2-name-ui">CPU</div>
+            <div class="damage" id="p2-damage">0%</div>
+            <div id="p2-cooldown" style="font-size: 13px; color: #0ff; height: 18px; font-weight: bold;">READY</div>
+            <div class="shield-bar-container"><div id="p2-shield-bar" class="shield-bar"></div></div>
+            <div class="stocks" id="p2-stocks">● ● ●</div>
+        </div>
+    </div>
+
+    <div id="overlay">
+        <div class="menu-container">
+            <h1 style="margin: 0 0 30px 0; font-size: 60px; font-style: italic; color: #fff; text-shadow: 0 0 30px #e61e25;">SUPER SMASH BROS <span style="color:#e61e25">ULTIMATE 2.5D</span></h1>
+            
+            <div class="section">
+                <div class="mode-select">
+                    <div id="mode-1p" class="mode-btn selected" onclick="setMode('1P')">SINGLE PLAYER</div>
+                    <div id="mode-2p" class="mode-btn" onclick="setMode('2P')">VERSUS MODE</div>
+                </div>
+            </div>
+
+            <div class="selection-grid">
+                <div class="player-box p1-box">
+                    <h4>PLAYER 1</h4>
+                    <div class="char-select" id="p1-char-list"></div>
+                </div>
+                <div class="player-box p2-box">
+                    <h4 id="p2-label">CPU</h4>
+                    <div class="char-select" id="p2-char-list"></div>
+                </div>
+            </div>
+
+            <div class="move-list">
+                <div class="move-col">
+                    <h4>PLAYER 1</h4>
+                    <div class="move-item"><span>Move / Jump:</span> <span class="key">WASD</span></div>
+                    <div class="move-item"><span>Attack:</span> <span class="key">J</span></div>
+                    <div class="move-item"><span>Special / Recovery:</span> <span class="key key-spec">K</span></div>
+                    <div class="move-item"><span>Shield:</span> <span class="key">L</span></div>
+                </div>
+                <div class="move-col">
+                    <h4>PLAYER 2</h4>
+                    <div class="move-item"><span>Move / Jump:</span> <span class="key">Arrows</span></div>
+                    <div class="move-item"><span>Attack:</span> <span class="key">I</span></div>
+                    <div class="move-item"><span>Special / Recovery:</span> <span class="key key-spec">O</span></div>
+                    <div class="move-item"><span>Shield:</span> <span class="key">P</span></div>
+                </div>
+            </div>
+
+            <button id="start-btn" onclick="startGame()">FREE FOR ALL!</button>
+        </div>
+    </div>
+
+    <div id="game-over">
+        <h1 id="result-text" style="font-size: 60px; margin-bottom: 30px; color: #e61e25; font-style: italic;">VICTORY!</h1>
+        <button onclick="location.reload()" style="padding: 15px 60px; font-size: 24px; cursor: pointer; background: #e61e25; color: white; border: none; border-radius: 15px; font-weight: bold; text-transform: uppercase;">Retry Battle</button>
+    </div>
+
+    <div id="ko-flash" class="ko-flash"></div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+
+        // --- Constants & Global State ---
+        const GRAVITY = -0.015;
+        const FRICTION = 0.92;
+        const BLAST_ZONE_X = 26;
+        const BLAST_ZONE_Y = 16;
+        const STAGE_WIDTH = 13;
+        const STAGE_HEIGHT = 1;
+
+        let isStarted = false;
+        let isGameOver = false;
+        let gameMode = '1P';
+        let p1CharIdx = 0;
+        let p2CharIdx = 0;
+        let hitFreeze = 0;
+        let shakePower = 0;
+
+        // Character Data (Sonic tuned for better handling)
+        const CHAR_DATA = [
+            { id: 'blue', name: "BLUE", color: "#4444ff", jump: 0.36, speed: 0.022, power: 1.0, weight: 1.0, jumps: 2, desc: "バランス" },
+            { id: 'green', name: "GREEN", color: "#44ff44", jump: 0.44, speed: 0.032, power: 0.7, weight: 0.8, jumps: 2, desc: "スピード" },
+            { id: 'yellow', name: "YELLOW", color: "#ffff44", jump: 0.32, speed: 0.018, power: 1.5, weight: 1.3, jumps: 2, desc: "パワー" },
+            { id: 'mac', name: "MAC", color: "#00aa00", jump: 0.25, speed: 0.045, power: 1.4, weight: 1.2, jumps: 2, desc: "ボクサー" },
+            { id: 'sonic', name: "SONIC", color: "#00ccff", jump: 0.52, speed: 0.065, power: 0.6, weight: 0.7, jumps: 2, desc: "音速" },
+            { id: 'bowser', name: "BOWSER", color: "#ff8800", jump: 0.30, speed: 0.014, power: 1.8, weight: 1.8, jumps: 2, desc: "重量級" },
+            { id: 'kirby', name: "KIRBY", color: "#ffccdd", jump: 0.34, speed: 0.020, power: 0.7, weight: 0.65, jumps: 5, desc: "多段J" }
+        ];
+
+        // --- Procedural Sprites ---
+        const textureCache = {};
+        function createCharTexture(charId) {
+            if (textureCache[charId]) return textureCache[charId];
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const data = CHAR_DATA.find(c => c.id === charId);
+            const color = data.color;
+
+            // Glossy body
+            const grad = ctx.createRadialGradient(128, 128, 10, 128, 128, 100);
+            grad.addColorStop(0, color); grad.addColorStop(1, '#000');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            if (charId === 'sonic') {
+                ctx.moveTo(128, 40); ctx.lineTo(200, 80); ctx.lineTo(160, 120); ctx.lineTo(220, 160); ctx.lineTo(128, 220);
+                ctx.lineTo(36, 160); ctx.lineTo(96, 120); ctx.lineTo(56, 80); ctx.closePath(); ctx.fill();
+            } else if (charId === 'bowser') {
+                ctx.ellipse(128, 140, 100, 90, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = "#ffcc33"; ctx.beginPath(); ctx.arc(128, 100, 60, 0, Math.PI * 2); ctx.fill();
+            } else if (charId === 'kirby') {
+                ctx.arc(128, 128, 100, 0, Math.PI * 2); ctx.fill();
+            } else {
+                ctx.roundRect(48, 48, 160, 180, 40); ctx.fill();
+            }
+
+            // Outline
+            ctx.strokeStyle = "white"; ctx.lineWidth = 6; ctx.stroke();
+
+            // Mac's Gloves
+            if (charId === 'mac') {
+                ctx.fillStyle = "#ff0000"; ctx.beginPath(); ctx.arc(60, 180, 35, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(196, 180, 35, 0, Math.PI*2); ctx.fill();
+            }
+
+            // Big Eyes
+            ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.ellipse(100, 110, 20, 25, 0.1, 0, Math.PI*2); ctx.ellipse(156, 110, 20, 25, -0.1, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(105, 110, 10, 0, Math.PI*2); ctx.arc(151, 110, 10, 0, Math.PI*2); ctx.fill();
+
+            const tex = new THREE.CanvasTexture(canvas); textureCache[charId] = tex;
+            return tex;
+        }
+
+        // --- Init UI ---
+        function initMenu() {
+            const p1List = document.getElementById('p1-char-list');
+            const p2List = document.getElementById('p2-char-list');
+            CHAR_DATA.forEach((char, i) => {
+                const createCard = (player) => {
+                    const card = document.createElement('div');
+                    card.className = `char-card ${player}-char ${i === 0 ? 'selected' : ''}`;
+                    card.onclick = () => selectChar(player === 'p1' ? 1 : 2, i);
+                    card.innerHTML = `<div class="char-preview"><canvas width="40" height="40" id="cvs-${player}-${char.id}"></canvas></div><div style="font-weight: bold;">${char.name}</div>`;
+                    return card;
+                };
+                p1List.appendChild(createCard('p1')); p2List.appendChild(createCard('p2'));
+                setTimeout(() => {
+                    const tex = createCharTexture(char.id);
+                    [1, 2].forEach(p => {
+                        const ctx = document.getElementById(`cvs-p${p}-${char.id}`).getContext('2d');
+                        ctx.drawImage(tex.image, 0, 0, 40, 40);
+                    });
+                }, 50);
+            });
+        }
+        initMenu();
+
+        window.setMode = (mode) => {
+            gameMode = mode;
+            document.getElementById('mode-1p').classList.toggle('selected', mode === '1P');
+            document.getElementById('mode-2p').classList.toggle('selected', mode === '2P');
+            document.getElementById('p2-label').innerText = mode === '1P' ? 'CPU' : 'PLAYER 2';
+        };
+
+        window.selectChar = (player, idx) => {
+            if (player === 1) { p1CharIdx = idx; document.querySelectorAll('.p1-char').forEach((c, i) => c.classList.toggle('selected', i === idx)); }
+            else { p2CharIdx = idx; document.querySelectorAll('.p2-char').forEach((c, i) => c.classList.toggle('selected', i === idx)); }
+        };
+
+        window.startGame = () => {
+            p1.applyCharData(CHAR_DATA[p1CharIdx]); p2.applyCharData(CHAR_DATA[p2CharIdx]);
+            p2.isCPU = (gameMode === '1P');
+            document.getElementById('p1-name-ui').innerText = CHAR_DATA[p1CharIdx].name;
+            document.getElementById('p2-name-ui').innerText = CHAR_DATA[p2CharIdx].name;
+            isStarted = true; document.getElementById('overlay').style.display = 'none';
+        };
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0515);
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(5, 15, 10);
+        scene.add(dirLight);
+
+        // Stage Design
+        const stageGroup = new THREE.Group();
+        const stageBase = new THREE.Mesh(new THREE.BoxGeometry(STAGE_WIDTH, STAGE_HEIGHT, 4), new THREE.MeshPhongMaterial({ color: 0x1a1a1a }));
+        stageBase.position.y = -STAGE_HEIGHT / 2; stageGroup.add(stageBase);
+        const stageEdge = new THREE.Mesh(new THREE.BoxGeometry(STAGE_WIDTH + 0.5, 0.3, 4.2), new THREE.MeshBasicMaterial({ color: 0xff0066 }));
+        stageGroup.add(stageEdge);
+        scene.add(stageGroup);
+
+        // --- Fighter Class ---
+        class Fighter {
+            constructor(x, id) {
+                this.id = id; this.damage = 0; this.stocks = 3; this.respawnX = x;
+                this.material = new THREE.SpriteMaterial({ transparent: true });
+                this.sprite = new THREE.Sprite(this.material);
+                this.sprite.scale.set(1.8, 1.8, 1);
+                this.sprite.position.set(x, 0.9, 0);
+                scene.add(this.sprite);
+
+                // Shield Visual
+                this.shieldMesh = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 16), new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.4 }));
+                this.shieldMesh.visible = false;
+                scene.add(this.shieldMesh);
+
+                this.stats = {}; this.vel = new THREE.Vector2(0, 0);
+                this.isGrounded = false; this.jumps = 0; this.facing = x > 0 ? -1 : 1;
+                this.stunTimer = 0; this.specialCooldown = 0;
+                this.shieldValue = 100; this.isGuarding = false;
+            }
+
+            applyCharData(data) {
+                this.material.map = createCharTexture(data.id);
+                this.stats = {...data};
+            }
+
+            update(opponent) {
+                if (hitFreeze > 0) return;
+                if (this.stunTimer > 0) this.stunTimer--;
+                if (this.specialCooldown > 0) this.specialCooldown--;
+
+                // Shield Regeneration
+                if (!this.isGuarding && this.shieldValue < 100) this.shieldValue += 0.2;
+                if (this.isGuarding) {
+                    this.shieldValue -= 0.5;
+                    this.shieldMesh.visible = true;
+                    this.shieldMesh.position.copy(this.sprite.position);
+                    this.shieldMesh.scale.setScalar(this.shieldValue / 100);
+                    if (this.shieldValue <= 0) this.breakShield();
+                } else { this.shieldMesh.visible = false; }
+
+                // Physics
+                this.vel.y += GRAVITY;
+                this.sprite.position.x += this.vel.x;
+                this.sprite.position.y += this.vel.y;
+                this.vel.x *= FRICTION;
+
+                // Collision
+                if (this.vel.y < 0 && this.sprite.position.y <= 0.9 && this.sprite.position.y > 0 && Math.abs(this.sprite.position.x) < STAGE_WIDTH / 2) {
+                    this.sprite.position.y = 0.9; this.vel.y = 0; this.isGrounded = true; this.jumps = 0;
+                } else { this.isGrounded = false; }
+
+                // Blast Zones
+                if (Math.abs(this.sprite.position.x) > BLAST_ZONE_X || Math.abs(this.sprite.position.y) > BLAST_ZONE_Y) this.die();
+
+                this.sprite.scale.x = (this.facing === 1 ? 1.8 : -1.8);
+                this.updateUI();
+                
+                // Knockback Trail
+                if (Math.abs(this.vel.x) > 0.2 || Math.abs(this.vel.y) > 0.2) createEffect(this.sprite.position, 0xcccccc, 0.4);
+            }
+
+            breakShield() { this.isGuarding = false; this.stunTimer = 180; this.shieldValue = 20; }
+
+            updateUI() {
+                const cdEl = document.getElementById(`p${this.id}-cooldown`);
+                if (this.specialCooldown > 0) { cdEl.innerText = `SPECIAL: ${(this.specialCooldown/60).toFixed(1)}s`; cdEl.style.color = "#f44"; }
+                else { cdEl.innerText = "READY"; cdEl.style.color = "#0ff"; }
+                document.getElementById(`p${this.id}-shield-bar`).style.width = this.shieldValue + "%";
+                document.getElementById(`p${this.id}-shield-bar`).style.background = this.shieldValue < 30 ? "#f00" : "#0f0";
+            }
+
+            jump() {
+                if (this.stunTimer > 0 || this.isGuarding) return;
+                if (this.jumps < this.stats.jumps) {
+                    this.vel.y = this.stats.jump; this.jumps++; this.isGrounded = false;
+                    createEffect(this.sprite.position, 0xffffff, 0.6);
+                }
+            }
+
+            move(dir) {
+                if (this.stunTimer > 0 || this.isGuarding) return;
+                this.vel.x += dir * this.stats.speed; this.facing = dir > 0 ? 1 : -1;
+            }
+
+            attack(type, keys, opponent) {
+                if (this.stunTimer > 0 || this.isGuarding) return;
+                if (type === 'special' && this.specialCooldown > 0) return;
+
+                let power = 7; let knockDir = new THREE.Vector2(this.facing, 0.3).normalize();
+                if (type === 'special') {
+                    const up = this.id === 1 ? keys['KeyW'] : keys['ArrowUp'];
+                    if (up) { power = 10; this.vel.y = this.stats.jump * 1.6; knockDir.set(0, 1); }
+                    else { power = 16; knockDir.set(this.facing, 0.2); }
+                    this.specialCooldown = 180;
+                } else {
+                    const up = this.id === 1 ? keys['KeyW'] : keys['ArrowUp'];
+                    const down = this.id === 1 ? keys['KeyS'] : keys['ArrowDown'];
+                    if (up) { power = 9; knockDir.set(0, 1); this.vel.y = this.stats.jump * 0.5; }
+                    else if (down) { power = 10; knockDir.set(this.facing * 0.5, -0.5); }
+                    else if (Math.abs(this.vel.x) > 0.05) { power = 12; knockDir.set(this.facing * 1.5, 0.2); }
+                }
+                power *= this.stats.power;
+
+                // Hit detection
+                if (this.sprite.position.distanceTo(opponent.sprite.position) < 2.8) {
+                    opponent.takeHit(power, knockDir, this.id);
+                }
+                
+                // Visual
+                const vfx = new THREE.Mesh(new THREE.SphereGeometry(1.5, 8, 8), new THREE.MeshBasicMaterial({ color: type==='special'?0xff0000:0xffffff, transparent: true, opacity: 0.5 }));
+                vfx.position.copy(this.sprite.position); vfx.position.x += this.facing * 1.2; scene.add(vfx);
+                setTimeout(() => scene.remove(vfx), 100);
+            }
+
+            takeHit(power, dir, attackerId) {
+                if (this.isGuarding) { this.shieldValue -= power * 2; return; }
+                
+                this.damage += power;
+                const kb = (power + (this.damage * 0.25)) * 0.04 / this.stats.weight;
+                this.vel.x = dir.x * kb; this.vel.y = dir.y * kb;
+                this.stunTimer = 15;
+                
+                // Smash Mechanics: Freeze & Shake
+                hitFreeze = 5;
+                shakePower = kb * 0.5;
+                if (kb > 0.8) flashKO();
+
+                updateHUD();
+                createEffect(this.sprite.position, 0xff0000, 1.2);
+            }
+
+            die() {
+                this.stocks--; this.damage = 0; this.specialCooldown = 0; this.vel.set(0, 0);
+                this.sprite.position.set(this.respawnX, 8, 0); updateHUD();
+                if (this.stocks <= 0) endGame(this.id === 1 ? "PLAYER 2 WINS" : "PLAYER 1 WINS");
+            }
+        }
+
+        const p1 = new Fighter(-5, 1);
+        const p2 = new Fighter(5, 2);
+
+        function flashKO() {
+            const el = document.getElementById('ko-flash'); el.style.opacity = 1;
+            setTimeout(() => el.style.opacity = 0, 100);
+        }
+
+        function createEffect(pos, color, scale) {
+            const p = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, 0.3), new THREE.MeshBasicMaterial({ color }));
+            p.position.copy(pos); scene.add(p);
+            const dir = new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, 0).normalize();
+            let life = 15;
+            function anim() {
+                if (life-- > 0) { p.position.add(dir.multiplyScalar(0.2)); p.rotation.z += 0.1; p.scale.multiplyScalar(0.9); requestAnimationFrame(anim); }
+                else scene.remove(p);
+            }
+            anim();
+        }
+
+        function updateHUD() {
+            document.getElementById('p1-damage').innerText = `${Math.floor(p1.damage)}%`;
+            document.getElementById('p2-damage').innerText = `${Math.floor(p2.damage)}%`;
+            document.getElementById('p1-stocks').innerText = '● '.repeat(Math.max(0, p1.stocks));
+            document.getElementById('p2-stocks').innerText = '● '.repeat(Math.max(0, p2.stocks));
+        }
+
+        const keys = {};
+        window.onkeydown = (e) => {
+            keys[e.code] = true;
+            if (e.code === 'KeyW') p1.jump();
+            if (e.code === 'KeyJ') p1.attack('normal', keys, p2);
+            if (e.code === 'KeyK') p1.attack('special', keys, p2);
+            if (e.code === 'KeyL') p1.isGuarding = true;
+            if (!p2.isCPU) {
+                if (e.code === 'ArrowUp') p2.jump();
+                if (e.code === 'KeyI') p2.attack('normal', keys, p1);
+                if (e.code === 'KeyO') p2.attack('special', keys, p1);
+                if (e.code === 'KeyP') p2.isGuarding = true;
+            }
+        };
+        window.onkeyup = (e) => {
+            keys[e.code] = false;
+            if (e.code === 'KeyL') p1.isGuarding = false;
+            if (e.code === 'KeyP') p2.isGuarding = false;
+        };
+
+        function updateCPU() {
+            if (hitFreeze > 0 || p2.stunTimer > 0) return;
+            const dist = p1.sprite.position.x - p2.sprite.position.x;
+            if (Math.abs(dist) > 2) p2.move(Math.sign(dist));
+            if (p1.sprite.position.y - p2.sprite.position.y > 2.5 && p2.isGrounded) p2.jump();
+            if (Math.abs(dist) < 2.5 && Math.random() < 0.1) p2.attack('normal', {}, p1);
+            if (p1.damage > 80 && p2.specialCooldown === 0 && Math.random() < 0.05) p2.attack('special', {}, p1);
+            // Simple recovery
+            if (Math.abs(p2.sprite.position.x) > STAGE_WIDTH/2 + 1) {
+                p2.move(p2.sprite.position.x > 0 ? -1 : 1);
+                if (p2.sprite.position.y < 1) p2.attack('special', {'KeyW': true, 'ArrowUp': true}, p1);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (!isStarted || isGameOver) return;
+
+            if (hitFreeze > 0) { hitFreeze--; return; }
+
+            if (keys['KeyA']) p1.move(-1); if (keys['KeyD']) p1.move(1);
+            if (!p2.isCPU) { if (keys['ArrowLeft']) p2.move(-1); if (keys['ArrowRight']) p2.move(1); }
+            else updateCPU();
+
+            p1.update(p2); p2.update(p1);
+
+            // Screen Shake & Camera
+            const midX = (p1.sprite.position.x + p2.sprite.position.x) / 2;
+            const dist = Math.abs(p1.sprite.position.x - p2.sprite.position.x);
+            camera.position.x = THREE.MathUtils.lerp(camera.position.x, midX, 0.1) + (Math.random() - 0.5) * shakePower;
+            camera.position.y = 2 + (Math.random() - 0.5) * shakePower;
+            camera.position.z = THREE.MathUtils.lerp(camera.position.z, 15 + dist * 0.4, 0.1);
+            camera.lookAt(midX, 2, 0);
+            if (shakePower > 0) shakePower *= 0.9;
+
+            renderer.render(scene, camera);
+        }
+
+        function endGame(text) { isGameOver = true; document.getElementById('result-text').innerText = text; document.getElementById('game-over').style.display = 'block'; }
+        animate();
+        window.onresize = () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); };
+    </script>
+</body>
+</html>
