@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>バトラーモンスターズ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+
+  :root{
+    --bg: #0f0b1a;
+    --bg2: #171025;
+    --panel: #1e1730;
+    --panel2: #251c3a;
+    --border: #3a2d54;
+    --gold: #d9b34a;
+    --gold-dim: #8a7135;
+    --text: #ece6f5;
+    --text-dim: #a89bc4;
+    --hp: #4caf6b;
+    --hp-low: #e05260;
+    --common: #9a97ad;
+    --uncommon: #4caf6b;
+    --rare: #4a90d9;
+    --epic: #a855f7;
+    --legendary: #f5a623;
+    --mythic: #ff5fa2;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Noto Sans JP', sans-serif;
+    background:
+      radial-gradient(circle at 20% 0%, #241a3d 0%, transparent 45%),
+      radial-gradient(circle at 85% 15%, #2a1a3a 0%, transparent 40%),
+      var(--bg);
+    color:var(--text);
+    min-height:100vh;
+  }
+  .display{font-family:'Cinzel', serif;}
+  #app{max-width:760px;margin:0 auto;padding:14px 14px 40px;}
+
+  .topbar{
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+    padding:10px 14px;background:var(--panel);border:1px solid var(--border);
+    border-radius:10px;margin-bottom:12px;flex-wrap:wrap;
+  }
+  .topbar .title{font-family:'Cinzel',serif;font-weight:900;letter-spacing:1px;font-size:15px;color:var(--gold);}
+  .topbar-right{display:flex;gap:8px;align-items:center;}
+  .stones{display:flex;align-items:center;gap:6px;background:var(--bg2);padding:5px 10px;border-radius:20px;border:1px solid var(--gold-dim);font-weight:700;font-size:13px;}
+  .stones .gem{color:var(--gold);}
+  .sound-toggle{
+    background:var(--bg2);border:1px solid var(--border);color:var(--text-dim);border-radius:20px;
+    padding:5px 10px;cursor:pointer;font-size:13px;
+  }
+  .sound-toggle.on{color:var(--gold);border-color:var(--gold-dim);}
+
+  .nav{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .nav button{
+    flex:1;min-width:70px;padding:9px 4px;background:var(--panel);border:1px solid var(--border);
+    color:var(--text-dim);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;
+    font-family:'Noto Sans JP',sans-serif;
+  }
+  .nav button.active{background:linear-gradient(180deg,#3a2d5c,#251c3a);color:var(--gold);border-color:var(--gold-dim);}
+
+  h2.section-title{
+    font-family:'Cinzel',serif;color:var(--gold);font-size:18px;margin:4px 0 12px;
+    letter-spacing:.5px;border-left:4px solid var(--gold);padding-left:10px;
+  }
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
+  .muted{color:var(--text-dim);font-size:13px;line-height:1.6;}
+
+  .btn{
+    display:inline-block;padding:10px 18px;border-radius:8px;border:1px solid var(--gold-dim);
+    background:linear-gradient(180deg,#3d2f63,#241a3d);color:var(--gold);font-weight:700;
+    cursor:pointer;font-family:'Noto Sans JP',sans-serif;font-size:13px;
+  }
+  .btn:disabled{opacity:.4;cursor:default;}
+  .btn.secondary{background:var(--panel2);color:var(--text-dim);border-color:var(--border);}
+  .btn.danger{border-color:#7a3838;color:#e08a8a;}
+  .btn.wide{width:100%;text-align:center;}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .home-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .home-tile{
+    background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 12px;
+    text-align:center;cursor:pointer;
+  }
+  .home-tile .ic{font-size:28px;margin-bottom:6px;}
+  .home-tile .lb{font-family:'Cinzel',serif;color:var(--gold);font-weight:700;font-size:13px;}
+  .home-tile .sub{font-size:10px;color:var(--text-dim);margin-top:4px;}
+
+  .gacha-banner{
+    border-radius:14px;padding:22px 16px;text-align:center;margin-bottom:14px;
+    background:linear-gradient(160deg,#2c1f4a,#1a1330 60%);border:1px solid var(--gold-dim);
+  }
+  .gacha-banner .big{font-family:'Cinzel',serif;font-size:22px;color:var(--gold);font-weight:900;}
+  .pull-result-wrap{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:14px;}
+
+  .char-card{
+    width:100px;border-radius:10px;padding:10px 6px;text-align:center;position:relative;
+    border:2px solid var(--common);background:var(--panel2);
+    animation: pop .35s ease;
+  }
+  @keyframes pop{from{transform:scale(.4);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .char-card.common{border-color:var(--common);}
+  .char-card.uncommon{border-color:var(--uncommon);box-shadow:0 0 10px -2px var(--uncommon);}
+  .char-card.rare{border-color:var(--rare);box-shadow:0 0 12px -2px var(--rare);}
+  .char-card.epic{border-color:var(--epic);box-shadow:0 0 14px -2px var(--epic);}
+  .char-card.legendary{border-color:var(--legendary);box-shadow:0 0 18px 0 var(--legendary);}
+  .char-card.mythic{border:2px solid transparent;background-image:linear-gradient(var(--panel2),var(--panel2)),linear-gradient(135deg,#ff5fa2,#ffd35f,#5fd0ff,#ff5fa2);background-origin:border-box;background-clip:padding-box, border-box;box-shadow:0 0 22px 1px var(--mythic);}
+  .char-card .icon{font-size:34px;}
+  .char-card .name{font-size:11px;font-weight:700;margin-top:4px;min-height:28px;}
+  .char-card .rarity-tag{font-size:9px;font-weight:900;letter-spacing:1px;margin-top:2px;}
+  .char-card.common .rarity-tag{color:var(--common);}
+  .char-card.uncommon .rarity-tag{color:var(--uncommon);}
+  .char-card.rare .rarity-tag{color:var(--rare);}
+  .char-card.epic .rarity-tag{color:var(--epic);}
+  .char-card.legendary .rarity-tag{color:var(--legendary);}
+  .char-card.mythic .rarity-tag{color:var(--mythic);}
+  .char-card .lv{position:absolute;top:4px;left:6px;font-size:10px;color:var(--text-dim);}
+  .char-card .stat-mini{font-size:9px;color:var(--text-dim);margin-top:3px;}
+
+  .party-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+  .party-slot{
+    aspect-ratio:1/1.15;border:2px dashed var(--border);border-radius:10px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;background:var(--panel2);
+    text-align:center;font-size:10px;
+  }
+  .party-slot.filled{border-style:solid;padding:4px;}
+  .party-slot .char-card{width:100%;padding:6px 2px;}
+  .party-slot .char-card .icon{font-size:24px;}
+  .party-slot .char-card .name{font-size:9px;min-height:0;}
+  .roster-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .roster-grid .char-card{width:auto;cursor:pointer;}
+  .char-card.selected{outline:2px solid var(--gold);}
+  .char-card.in-party{opacity:.4;}
+  .filter-row{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;}
+  .filter-row button{
+    background:var(--panel2);border:1px solid var(--border);color:var(--text-dim);border-radius:16px;
+    padding:5px 12px;font-size:11px;cursor:pointer;
+  }
+  .filter-row button.active{color:var(--gold);border-color:var(--gold-dim);}
+
+  .world-grid{display:grid;gap:4px;margin:0 auto 14px;justify-content:center;}
+  .tile{
+    width:40px;height:40px;background:var(--panel2);border:1px solid var(--border);border-radius:6px;
+    display:flex;align-items:center;justify-content:center;font-size:16px;position:relative;
+  }
+  .tile.player::after{content:'';position:absolute;inset:0;border:2px solid var(--gold);border-radius:6px;}
+  .tile.cleared{opacity:.35;}
+  .dpad{display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(3,52px);gap:4px;justify-content:center;margin:10px auto;}
+  .dpad button{background:var(--panel);border:1px solid var(--border);color:var(--gold);border-radius:8px;font-size:16px;cursor:pointer;}
+  .dpad button.empty{background:transparent;border:none;}
+
+  .battle-field{display:flex;flex-direction:column;gap:14px;margin-bottom:14px;}
+  .team-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+  .unit{
+    width:100px;background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:8px 6px;
+    text-align:center;position:relative;cursor:pointer;
+  }
+  .unit.dead{opacity:.3;filter:grayscale(1);cursor:default;}
+  .unit.targetable{border-color:var(--gold);box-shadow:0 0 8px 0 var(--gold);}
+  .unit.hit{animation:hitshake .3s;}
+  @keyframes hitshake{0%,100%{transform:translateX(0);}25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}
+  .unit .icon{font-size:26px;}
+  .unit .name{font-size:10px;font-weight:700;margin:3px 0 2px;}
+  .hp-bar-bg{height:7px;background:#000;border-radius:4px;overflow:hidden;margin-top:3px;}
+  .hp-bar{height:100%;background:var(--hp);transition:width .3s;}
+  .hp-bar.low{background:var(--hp-low);}
+  .hp-text{font-size:9px;color:var(--text-dim);margin-top:2px;}
+  .cd-text{font-size:9px;color:var(--gold-dim);}
+  .actor-highlight{outline:2px solid var(--gold);}
+
+  .log-box{
+    background:#0c0916;border:1px solid var(--border);border-radius:8px;padding:8px 10px;
+    height:110px;overflow-y:auto;font-size:12px;color:var(--text-dim);display:flex;flex-direction:column-reverse;
+  }
+  .log-box div{margin-bottom:4px;}
+
+  .vs-label{text-align:center;font-family:'Cinzel',serif;color:var(--gold-dim);font-size:12px;letter-spacing:3px;}
+
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(5,3,12,.75);display:flex;align-items:center;justify-content:center;
+    z-index:50;padding:20px;
+  }
+  .modal{background:var(--panel);border:1px solid var(--gold-dim);border-radius:14px;padding:20px;max-width:420px;width:100%;text-align:center;}
+
+  .evo-row{display:flex;align-items:center;gap:10px;justify-content:center;margin:10px 0;}
+  .evo-arrow{font-size:20px;color:var(--gold);}
+  .dex-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .dex-card{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px 4px;text-align:center;font-size:10px;}
+  .dex-card.locked{opacity:.25;}
+  .dex-card .icon{font-size:22px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* ========================= SOUND ========================= */
+let audioCtx = null;
+function ensureAudio(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
+  }
+  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+}
+function beep({freq=440, dur=0.15, type='sine', vol=0.2, sweepTo=null, delay=0}){
+  if(!state.soundOn) return;
+  ensureAudio();
+  if(!audioCtx) return;
+  const t0 = audioCtx.currentTime + delay;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t0);
+  if(sweepTo) osc.frequency.exponentialRampToValueAtTime(sweepTo, t0+dur);
+  gain.gain.setValueAtTime(vol, t0);
+  gain.gain.exponentialRampToValueAtTime(0.001, t0+dur);
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start(t0);
+  osc.stop(t0+dur+0.02);
+}
+const SFX = {
+  click:  ()=>beep({freq:520,dur:0.06,type:'square',vol:0.12}),
+  navigate: ()=>beep({freq:300,dur:0.08,type:'triangle',vol:0.12}),
+  attack: ()=>beep({freq:180,dur:0.12,type:'sawtooth',vol:0.18,sweepTo:60}),
+  skill: ()=>{ beep({freq:700,dur:0.18,type:'sine',vol:0.18,sweepTo:1200}); beep({freq:900,dur:0.2,type:'sine',vol:0.1,delay:0.05,sweepTo:1500}); },
+  hit: ()=>beep({freq:150,dur:0.08,type:'square',vol:0.15,sweepTo:50}),
+  defeat: ()=>beep({freq:300,dur:0.3,type:'sawtooth',vol:0.15,sweepTo:40}),
+  win: ()=>{ [523,659,784,1046].forEach((f,i)=>beep({freq:f,dur:0.22,type:'sine',vol:0.16,delay:i*0.12})); },
+  lose: ()=>{ [400,300,200,140].forEach((f,i)=>beep({freq:f,dur:0.3,type:'sawtooth',vol:0.14,delay:i*0.14})); },
+  levelup: ()=>{ [440,554,659,880].forEach((f,i)=>beep({freq:f,dur:0.15,type:'triangle',vol:0.15,delay:i*0.07})); },
+  chest: ()=>{ beep({freq:400,dur:0.12,type:'triangle',vol:0.15}); beep({freq:800,dur:0.2,type:'sine',vol:0.15,delay:0.1}); },
+  gachaSpin: ()=>beep({freq:200,dur:0.4,type:'sine',vol:0.1,sweepTo:900}),
+  gachaCommon: ()=>beep({freq:500,dur:0.15,type:'triangle',vol:0.15}),
+  gachaRare: ()=>{ beep({freq:600,dur:0.15,type:'sine',vol:0.16}); beep({freq:800,dur:0.18,type:'sine',vol:0.13,delay:0.08}); },
+  gachaEpic: ()=>{ [500,700,900].forEach((f,i)=>beep({freq:f,dur:0.18,type:'sine',vol:0.16,delay:i*0.08})); },
+  gachaLegendary: ()=>{ [400,600,800,1000,1300].forEach((f,i)=>beep({freq:f,dur:0.25,type:'sine',vol:0.18,delay:i*0.09})); },
+  evolve: ()=>{ [300,500,700,1000,1400].forEach((f,i)=>beep({freq:f,dur:0.2,type:'sawtooth',vol:0.13,delay:i*0.08,sweepTo:f*1.5})); },
+};
+
+/* ========================= DATA ========================= */
+const RARITY = {
+  common:    {label:'コモン',     color:'var(--common)',    weight:40},
+  uncommon:  {label:'アンコモン', color:'var(--uncommon)',  weight:30},
+  rare:      {label:'レア',       color:'var(--rare)',      weight:18},
+  epic:      {label:'エピック',   color:'var(--epic)',      weight:8},
+  legendary: {label:'レジェンド', color:'var(--legendary)', weight:3},
+  mythic:    {label:'ミシック',   color:'var(--mythic)',    weight:1},
+};
+const RARITY_ORDER = ['common','uncommon','rare','epic','legendary','mythic'];
+// レアリティごとのステータス・スキル倍率係数
+const RARITY_STATS = {
+  common:    {hpMul:1.0, atkMul:1.0, skillMult:1.6, cd:2},
+  uncommon:  {hpMul:1.25,atkMul:1.15,skillMult:1.9, cd:2},
+  rare:      {hpMul:1.55,atkMul:1.35,skillMult:2.2, cd:3},
+  epic:      {hpMul:1.95,atkMul:1.65,skillMult:2.7, cd:3},
+  legendary: {hpMul:2.45,atkMul:2.05,skillMult:3.3, cd:4},
+  mythic:    {hpMul:3.1, atkMul:2.55,skillMult:4.0, cd:5},
+};
+
+// 属性（8種）× 種族（アイコン・素の能力傾向を持つ、約19種）を掛け合わせて300種を自動生成
+const ELEMENTS = [
+  {name:'紅蓮', tag:'火', skillWord:'業火'},
+  {name:'蒼海', tag:'水', skillWord:'波濤'},
+  {name:'雷鳴', tag:'雷', skillWord:'雷撃'},
+  {name:'氷結', tag:'氷', skillWord:'氷結'},
+  {name:'光輝', tag:'光', skillWord:'聖光'},
+  {name:'暗黒', tag:'闇', skillWord:'闇黒'},
+  {name:'疾風', tag:'風', skillWord:'旋風'},
+  {name:'大地', tag:'土', skillWord:'地裂'},
+];
+const CLASSES = [
+  {name:'剣士',   icon:'🗡️', evoIcon:'⚔️', hpBase:95,  atkBase:15, skillVerb:'斬'},
+  {name:'弓兵',   icon:'🏹', evoIcon:'🎯', hpBase:80,  atkBase:17, skillVerb:'矢'},
+  {name:'盾兵',   icon:'🛡️', evoIcon:'🏰', hpBase:120, atkBase:10, skillVerb:'守'},
+  {name:'魔導師', icon:'📖', evoIcon:'🧙', hpBase:75,  atkBase:18, skillVerb:'術'},
+  {name:'僧侶',   icon:'🙏', evoIcon:'⛑️', hpBase:85,  atkBase:12, skillVerb:'祈'},
+  {name:'槍兵',   icon:'🔱', evoIcon:'🏯', hpBase:100, atkBase:16, skillVerb:'突'},
+  {name:'忍者',   icon:'🥋', evoIcon:'🥷', hpBase:85,  atkBase:18, skillVerb:'撃'},
+  {name:'調教師', icon:'🐾', evoIcon:'🐕‍🦺', hpBase:90,  atkBase:14, skillVerb:'牙'},
+  {name:'拳闘士', icon:'🥊', evoIcon:'👊', hpBase:105, atkBase:17, skillVerb:'拳'},
+  {name:'狩人',   icon:'🪓', evoIcon:'🪖', hpBase:98,  atkBase:16, skillVerb:'刈'},
+  {name:'竜騎士', icon:'🐉', evoIcon:'🐲', hpBase:150, atkBase:24, skillVerb:'咆哮'},
+  {name:'機兵',   icon:'🤖', evoIcon:'🛰️', hpBase:130, atkBase:20, skillVerb:'砲'},
+  {name:'巨人',   icon:'🗿', evoIcon:'⛰️', hpBase:170, atkBase:18, skillVerb:'震'},
+  {name:'精霊使い',icon:'🌿', evoIcon:'🌳', hpBase:100, atkBase:19, skillVerb:'纏'},
+  {name:'呪術師', icon:'🕯️', evoIcon:'👁️', hpBase:88,  atkBase:20, skillVerb:'呪'},
+  {name:'剣鬼',   icon:'👹', evoIcon:'💢', hpBase:110, atkBase:22, skillVerb:'乱舞'},
+  {name:'女帝',   icon:'👑', evoIcon:'💫', hpBase:140, atkBase:23, skillVerb:'裁'},
+  {name:'賢者',   icon:'🔮', evoIcon:'🌌', hpBase:95,  atkBase:22, skillVerb:'滅'},
+  {name:'狼騎士', icon:'🐺', evoIcon:'🌙', hpBase:115, atkBase:19, skillVerb:'咬'},
+];
+
+function generateTemplates(){
+  const list = [];
+  const total = ELEMENTS.length * CLASSES.length; // 8 x 19 = 152 base combos
+  ELEMENTS.forEach((el, ei)=>{
+    CLASSES.forEach((cl, ci)=>{
+      const idx = ei*CLASSES.length + ci;
+      const rarity = RARITY_ORDER[idx % RARITY_ORDER.length];
+      const rs = RARITY_STATS[rarity];
+      list.push({
+        name: `${el.name}の${cl.name}`,
+        evoName: `真${el.name}${cl.name}`,
+        rarity,
+        icon: cl.icon,
+        evoIcon: cl.evoIcon,
+        hp: Math.round(cl.hpBase * rs.hpMul),
+        atk: Math.round(cl.atkBase * rs.atkMul),
+        skillName: `${el.skillWord}${cl.skillVerb}`,
+        skillMult: rs.skillMult,
+        cd: rs.cd,
+      });
+    });
+  });
+  // 152体では300に満たないため、称号バリエーションを追加して300種まで拡張
+  const TITLES = ['王','姫','将軍','使徒','守護者','使者','支配者','戦神','聖者','覇者'];
+  let ti = 0;
+  while(list.length < 300){
+    const el = ELEMENTS[ti % ELEMENTS.length];
+    const cl = CLASSES[Math.floor(ti / ELEMENTS.length) % CLASSES.length];
+    const title = TITLES[ti % TITLES.length];
+    const rarity = RARITY_ORDER[ti % RARITY_ORDER.length];
+    const rs = RARITY_STATS[rarity];
+    list.push({
+      name: `${el.name}の${title}${cl.name}`,
+      evoName: `真・${el.name}${title}${cl.name}`,
+      rarity,
+      icon: cl.icon,
+      evoIcon: cl.evoIcon,
+      hp: Math.round(cl.hpBase * rs.hpMul * 1.05),
+      atk: Math.round(cl.atkBase * rs.atkMul * 1.05),
+      skillName: `${el.skillWord}${title}${cl.skillVerb}`,
+      skillMult: rs.skillMult + 0.1,
+      cd: rs.cd,
+    });
+    ti++;
+  }
+  return list.slice(0,300);
+}
+const TEMPLATES = generateTemplates();
+
+const ENEMY_TEMPLATES = [
+  {name:'ゴブリン',   icon:'👺', hp:60, atk:10},
+  {name:'ウルフ',     icon:'🐺', hp:70, atk:12},
+  {name:'スケルトン', icon:'💀', hp:85, atk:13},
+  {name:'オーク',     icon:'👹', hp:110, atk:16},
+  {name:'ダークメイジ',icon:'🧙', hp:90,  atk:20},
+  {name:'ストーンゴーレム',icon:'🗿', hp:160, atk:14},
+  {name:'ワイバーン', icon:'🐲', hp:150, atk:22},
+];
+const BOSS_TEMPLATES = [
+  {name:'災厄の巨竜', icon:'🐉', hp:600, atk:34},
+  {name:'深淵の魔王', icon:'👹', hp:700, atk:38},
+  {name:'虚無の巨人', icon:'🗿', hp:900, atk:30},
+];
+
+const TILE_TYPES = ['monster','monster','chest','spring','empty','empty','monster','chest'];
+const PARTY_SIZE = 3;
+
+/* ========================= STATE ========================= */
+let uidCounter = 1;
+function uid(){ return 'c'+(uidCounter++); }
+
+const state = {
+  screen: 'home',
+  stones: 1200,
+  soundOn: true,
+  characters: [],
+  party: new Array(PARTY_SIZE).fill(null),
+  rosterFilter: 'all',
+  world: { size: 6, grid: [], player:{x:0,y:0}, stage: 1 },
+  battle: null,
+  pullResults: null,
+  toast: null,
+  evoSelectedId: null,
+};
+
+function weightedRarity(){
+  const total = Object.values(RARITY).reduce((s,r)=>s+r.weight,0);
+  let roll = Math.random()*total;
+  for(const key in RARITY){
+    if(roll < RARITY[key].weight) return key;
+    roll -= RARITY[key].weight;
+  }
+  return 'common';
+}
+
+function makeInstance(tpl){
+  return {
+    id: uid(), tplName: tpl.name, rarity: tpl.rarity, icon: tpl.icon,
+    evoIcon: tpl.evoIcon, evoName: tpl.evoName, evolved:false,
+    level: 1, exp: 0,
+    baseHp: tpl.hp, baseAtk: tpl.atk,
+    hp: tpl.hp, maxHp: tpl.hp, atk: tpl.atk,
+    skillName: tpl.skillName, skillMult: tpl.skillMult, skillCdMax: tpl.cd, skillCd: 0,
+  };
+}
+function pickTemplateByRarity(rarity){
+  const pool = TEMPLATES.filter(t=>t.rarity===rarity);
+  return pool[Math.floor(Math.random()*pool.length)];
+}
+function recalcStats(ch){
+  const evoMult = ch.evolved ? 1.5 : 1;
+  ch.maxHp = Math.round(ch.baseHp * (1 + (ch.level-1)*0.12) * evoMult);
+  ch.atk = Math.round(ch.baseAtk * (1 + (ch.level-1)*0.10) * evoMult);
+}
+function gainExp(ch, amount){
+  ch.exp += amount;
+  let leveled = false;
+  while(ch.exp >= ch.level*40){
+    ch.exp -= ch.level*40;
+    ch.level++;
+    leveled = true;
+  }
+  if(leveled){ recalcStats(ch); SFX.levelup(); }
+}
+function displayName(ch){ return ch.evolved ? ch.evoName : ch.tplName; }
+function displayIcon(ch){ return ch.evolved ? ch.evoIcon : ch.icon; }
+
+/* ========================= WORLD GEN ========================= */
+function genWorld(){
+  const size = state.world.size;
+  const grid = [];
+  for(let y=0;y<size;y++){
+    const row=[];
+    for(let x=0;x<size;x++) row.push({type: TILE_TYPES[Math.floor(Math.random()*TILE_TYPES.length)], cleared:false});
+    grid.push(row);
+  }
+  const cx = Math.floor(size/2), cy = Math.floor(size/2);
+  grid[cy][cx] = {type:'empty', cleared:true};
+  state.world.grid = grid;
+  state.world.player = {x:cx, y:cy};
+}
+genWorld();
+
+/* ========================= RENDER ROOT ========================= */
+function render(){
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="topbar">
+      <div class="title">⚔ バトラーモンスターズ</div>
+      <div class="topbar-right">
+        <button class="sound-toggle ${state.soundOn?'on':''}" id="soundToggle">${state.soundOn?'🔊 音ON':'🔇 音OFF'}</button>
+        <div class="stones"><span class="gem">💎</span> ${state.stones}</div>
+      </div>
+    </div>
+    <div class="nav">
+      ${navBtn('home','ホーム')}
+      ${navBtn('gacha','ガチャ')}
+      ${navBtn('world','ワールド')}
+      ${navBtn('party','パーティ')}
+      ${navBtn('evolve','進化')}
+      ${navBtn('dex','図鑑')}
+    </div>
+    <div id="screen"></div>
+  `;
+  document.getElementById('soundToggle').onclick = ()=>{ state.soundOn=!state.soundOn; if(state.soundOn){ ensureAudio(); SFX.click(); } render(); };
+  document.querySelectorAll('.nav button').forEach(b=>{
+    b.onclick = ()=>{ SFX.navigate(); state.screen = b.dataset.s; render(); };
+  });
+  const s = document.getElementById('screen');
+  if(state.battle){ s.innerHTML = renderBattle(); attachBattleEvents(); return; }
+  if(state.screen==='home') { s.innerHTML = renderHome(); attachHomeEvents(); }
+  else if(state.screen==='gacha') { s.innerHTML = renderGacha(); attachGachaEvents(); }
+  else if(state.screen==='world') { s.innerHTML = renderWorld(); attachWorldEvents(); }
+  else if(state.screen==='party') { s.innerHTML = renderParty(); attachPartyEvents(); }
+  else if(state.screen==='evolve') { s.innerHTML = renderEvolve(); attachEvolveEvents(); }
+  else if(state.screen==='dex') { s.innerHTML = renderDex(); }
+
+  if(state.toast){
+    s.innerHTML += `<div class="modal-overlay" id="toastOverlay"><div class="modal">
+      <p class="muted" style="font-size:14px;color:var(--text)">${state.toast}</p>
+      <button class="btn" id="toastOk">OK</button>
+    </div></div>`;
+    document.getElementById('toastOk').onclick = ()=>{ SFX.click(); state.toast=null; render(); };
+  }
+}
+function navBtn(key,label){
+  return `<button data-s="${key}" class="${state.screen===key && !state.battle?'active':''}">${label}</button>`;
+}
+
+/* ========================= HOME ========================= */
+function renderHome(){
+  const partyCount = state.party.filter(Boolean).length;
+  return `
+    <h2 class="section-title">冒険の拠点</h2>
+    <div class="card muted">
+      所持モンスター数: <b style="color:var(--gold)">${state.characters.length}</b> 体 /
+      編成中: <b style="color:var(--gold)">${partyCount}/${PARTY_SIZE}</b>
+    </div>
+    <div class="home-grid">
+      <div class="home-tile" data-a="gacha"><div class="ic">🔮</div><div class="lb">ガチャを引く</div><div class="sub">石でモンスターを召喚</div></div>
+      <div class="home-tile" data-a="world"><div class="ic">🗺️</div><div class="lb">オープンワールド</div><div class="sub">探索して仲間を発見</div></div>
+      <div class="home-tile" data-a="party"><div class="ic">🧑‍🤝‍🧑</div><div class="lb">パーティ編成</div><div class="sub">最大${PARTY_SIZE}体編成</div></div>
+      <div class="home-tile" data-a="arena"><div class="ic">🏟️</div><div class="lb">闘技場</div><div class="sub">いつでも周回して稼ぐ</div></div>
+      <div class="home-tile" data-a="boss"><div class="ic">👑</div><div class="lb">ボスラッシュ</div><div class="sub">強敵に挑み大報酬を狙う</div></div>
+      <div class="home-tile" data-a="evolve"><div class="ic">🌟</div><div class="lb">進化</div><div class="sub">モンスターを強化変身</div></div>
+    </div>
+  `;
+}
+function attachHomeEvents(){
+  document.querySelectorAll('.home-tile').forEach(t=>{
+    t.onclick = ()=>{
+      SFX.click();
+      const a = t.dataset.a;
+      if(a==='arena'){
+        if(state.party.filter(Boolean).length===0){ state.toast='パーティにモンスターを編成してください。'; render(); return; }
+        startBattle(Math.min(6, 1 + Math.floor(state.characters.length/4)), 'arena');
+      } else if(a==='boss'){
+        if(state.party.filter(Boolean).length===0){ state.toast='パーティにモンスターを編成してください。'; render(); return; }
+        startBossBattle();
+      } else { state.screen = a; render(); }
+    };
+  });
+}
+
+/* ========================= GACHA ========================= */
+function renderGacha(){
+  let resultsHtml = '';
+  if(state.pullResults){
+    resultsHtml = `<div class="card"><div class="muted" style="margin-bottom:8px;">召喚結果</div>
+      <div class="pull-result-wrap">${state.pullResults.map(cardHtml).join('')}</div></div>`;
+  }
+  return `
+    <h2 class="section-title">星辰の祭壇</h2>
+    <div class="gacha-banner">
+      <div class="big">✦ 光の祈祷 ✦</div>
+      <div class="muted" style="margin-top:6px;">コモン60% / レア30% / エピック8% / レジェンド2%<br>10連は必ずレア以上を1体確定</div>
+      <div class="btn-row" style="justify-content:center;margin-top:14px;">
+        <button class="btn" id="pull1">1回引く (100💎)</button>
+        <button class="btn" id="pull10">10連引く (900💎)</button>
+      </div>
+    </div>
+    ${resultsHtml}
+  `;
+}
+function cardHtml(ch){
+  return `<div class="char-card ${ch.rarity}">
+    <div class="lv">Lv${ch.level}</div>
+    <div class="icon">${displayIcon(ch)}</div>
+    <div class="name">${displayName(ch)}</div>
+    <div class="rarity-tag">${RARITY[ch.rarity].label}${ch.evolved?' ★進化':''}</div>
+    <div class="stat-mini">HP${ch.maxHp||ch.hp} / ATK${ch.atk}</div>
+  </div>`;
+}
+function attachGachaEvents(){
+  document.getElementById('pull1').onclick = ()=>doPull(1,100);
+  document.getElementById('pull10').onclick = ()=>doPull(10,900);
+}
+function doPull(n, cost){
+  if(state.stones < cost){ SFX.click(); state.toast='石が足りません。'; render(); return; }
+  state.stones -= cost;
+  SFX.gachaSpin();
+  const results = [];
+  let gotRarePlus = false;
+  let bestRarity = 'common';
+  for(let i=0;i<n;i++){
+    let rarity = weightedRarity();
+    if(n===10 && i===n-1 && !gotRarePlus){
+      const r = Math.random();
+      rarity = r < 0.6 ? 'rare' : r < 0.88 ? 'epic' : r < 0.98 ? 'legendary' : 'mythic';
+    }
+    if(rarity!=='common') gotRarePlus = true;
+    if(RARITY_ORDER.indexOf(rarity) > RARITY_ORDER.indexOf(bestRarity)) bestRarity = rarity;
+    const tpl = pickTemplateByRarity(rarity);
+    const inst = makeInstance(tpl);
+    state.characters.push(inst);
+    results.push(inst);
+  }
+  state.pullResults = results;
+  setTimeout(()=>{
+    if(bestRarity==='mythic') SFX.gachaLegendary();
+    else if(bestRarity==='legendary') SFX.gachaLegendary();
+    else if(bestRarity==='epic') SFX.gachaEpic();
+    else if(bestRarity==='rare') SFX.gachaRare();
+    else SFX.gachaCommon();
+    render();
+  }, 350);
+}
+
+/* ========================= PARTY / ROSTER ========================= */
+function renderParty(){
+  const slots = state.party.map((id,i)=>{
+    const ch = state.characters.find(c=>c.id===id);
+    if(!ch) return `<div class="party-slot" data-slot="${i}"><span class="muted">空き</span></div>`;
+    return `<div class="party-slot filled" data-slot="${i}" style="border-color:${RARITY[ch.rarity].color}">
+      ${cardHtml(ch)}
+    </div>`;
+  }).join('');
+
+  const filters = ['all',...RARITY_ORDER];
+  const filterRow = `<div class="filter-row">${filters.map(f=>
+    `<button data-f="${f}" class="${state.rosterFilter===f?'active':''}">${f==='all'?'すべて':RARITY[f].label}</button>`
+  ).join('')}</div>`;
+
+  const filtered = state.characters.filter(c=> state.rosterFilter==='all' || c.rarity===state.rosterFilter);
+  const roster = filtered.length === 0
+    ? `<div class="muted">該当するモンスターがいません。ガチャかワールド探索で仲間を集めましょう。</div>`
+    : `<div class="roster-grid">${filtered.map(ch=>{
+        const inParty = state.party.includes(ch.id);
+        return `<div class="char-card ${ch.rarity} ${inParty?'in-party':''}" data-id="${ch.id}">
+          ${cardHtml(ch)}
+        </div>`;
+      }).join('')}</div>`;
+
+  return `
+    <h2 class="section-title">パーティ編成（最大${PARTY_SIZE}体）</h2>
+    <div class="party-slots">${slots}</div>
+    <div class="muted" style="margin-bottom:10px;">モンスターをタップしてパーティに追加・解除できます。</div>
+    ${filterRow}
+    ${roster}
+  `;
+}
+function attachPartyEvents(){
+  document.querySelectorAll('.filter-row button').forEach(b=>{
+    b.onclick = ()=>{ SFX.click(); state.rosterFilter = b.dataset.f; render(); };
+  });
+  document.querySelectorAll('.party-slot.filled').forEach(el=>{
+    el.onclick = ()=>{
+      SFX.click();
+      const i = +el.dataset.slot;
+      state.party[i] = null;
+      render();
+    };
+  });
+  document.querySelectorAll('.roster-grid .char-card').forEach(el=>{
+    el.onclick = ()=>{
+      SFX.click();
+      const id = el.dataset.id;
+      if(state.party.includes(id)){
+        state.party[state.party.indexOf(id)] = null;
+      } else {
+        const emptyIdx = state.party.indexOf(null);
+        if(emptyIdx===-1){ state.toast=`パーティは${PARTY_SIZE}体までです。`; render(); return; }
+        state.party[emptyIdx] = id;
+      }
+      render();
+    };
+  });
+}
+
+/* ========================= EVOLVE ========================= */
+function renderEvolve(){
+  const sel = state.characters.find(c=>c.id===state.evoSelectedId);
+  const eligible = state.characters.filter(c=>!c.evolved && c.level>=10);
+  let detail = '';
+  if(sel){
+    const canEvo = !sel.evolved && sel.level>=10;
+    detail = `<div class="card" style="text-align:center;">
+      <div class="evo-row">
+        <div class="char-card ${sel.rarity}">${cardHtml(sel)}</div>
+        <div class="evo-arrow">➜</div>
+        <div class="char-card ${sel.rarity}" style="opacity:${canEvo?1:.4}">
+          <div class="icon">${sel.evoIcon}</div>
+          <div class="name">${sel.evoName}</div>
+          <div class="stat-mini">HP・ATK 1.5倍</div>
+        </div>
+      </div>
+      ${canEvo
+        ? `<button class="btn" id="doEvo">進化させる（石300💎）</button>`
+        : `<div class="muted">進化にはレベル10以上が必要です。（現在 Lv${sel.level}）</div>`}
+    </div>`;
+  }
+  const listHtml = state.characters.length===0
+    ? `<div class="muted">モンスターがいません。</div>`
+    : `<div class="roster-grid">${state.characters.map(ch=>
+        `<div class="char-card ${ch.rarity} ${ch.evolved?'':''}" data-id="${ch.id}">${cardHtml(ch)}</div>`
+      ).join('')}</div>`;
+
+  return `
+    <h2 class="section-title">進化</h2>
+    <div class="muted" style="margin-bottom:10px;">レベル10以上のモンスターは石300💎で進化させ、能力を1.5倍に強化できます。（進化可能: ${eligible.length}体）</div>
+    ${detail}
+    ${listHtml}
+  `;
+}
+function attachEvolveEvents(){
+  document.querySelectorAll('.roster-grid .char-card').forEach(el=>{
+    el.onclick = ()=>{ SFX.click(); state.evoSelectedId = el.dataset.id; render(); };
+  });
+  const evoBtn = document.getElementById('doEvo');
+  if(evoBtn) evoBtn.onclick = ()=>{
+    const sel = state.characters.find(c=>c.id===state.evoSelectedId);
+    if(!sel || sel.evolved || sel.level<10) return;
+    if(state.stones<300){ state.toast='石が足りません。'; render(); return; }
+    state.stones -= 300;
+    sel.evolved = true;
+    recalcStats(sel);
+    SFX.evolve();
+    state.toast = `${sel.evoName} に進化した！能力が大きく上昇した。`;
+    render();
+  };
+}
+
+/* ========================= DEX (図鑑) ========================= */
+function renderDex(){
+  const ownedNames = new Set(state.characters.map(c=>c.tplName));
+  const cards = TEMPLATES.map(t=>{
+    const owned = ownedNames.has(t.name);
+    return `<div class="dex-card ${owned?'':'locked'}">
+      <div class="icon">${owned?t.icon:'❓'}</div>
+      <div>${owned?t.name:'？？？'}</div>
+      <div style="color:${RARITY[t.rarity].color};font-size:9px;">${RARITY[t.rarity].label}</div>
+    </div>`;
+  }).join('');
+  return `
+    <h2 class="section-title">モンスター図鑑</h2>
+    <div class="muted" style="margin-bottom:10px;">発見数: ${ownedNames.size} / ${TEMPLATES.length}</div>
+    <div class="dex-grid">${cards}</div>
+  `;
+}
+
+/* ========================= WORLD ========================= */
+function renderWorld(){
+  const {grid, player, size} = state.world;
+  let cells = '';
+  for(let y=0;y<size;y++){
+    for(let x=0;x<size;x++){
+      const t = grid[y][x];
+      const isPlayer = (x===player.x && y===player.y);
+      let icon = '';
+      if(isPlayer) icon = '🧝';
+      else if(t.cleared) icon = '·';
+      else icon = tileIcon(t.type);
+      cells += `<div class="tile ${isPlayer?'player':''} ${t.cleared&&!isPlayer?'cleared':''}">${icon}</div>`;
+    }
+  }
+  return `
+    <h2 class="section-title">オープンワールド探索（第${state.world.stage}エリア）</h2>
+    <div class="muted" style="margin-bottom:8px;">マスに進むとモンスター・宝箱・泉に遭遇します。宝箱からは新しい仲間が見つかることも。</div>
+    <div class="world-grid" style="grid-template-columns:repeat(${size},40px);">${cells}</div>
+    <div class="dpad">
+      <div class="empty"></div><button data-dir="up">▲</button><div class="empty"></div>
+      <button data-dir="left">◀</button><div class="empty"></div><button data-dir="right">▶</button>
+      <div class="empty"></div><button data-dir="down">▼</button><div class="empty"></div>
+    </div>
+    <div class="btn-row" style="justify-content:center;">
+      <button class="btn secondary" id="newArea">新しいエリアへ移動</button>
+    </div>
+  `;
+}
+function tileIcon(type){ return {monster:'👾', chest:'🎁', spring:'💧', empty:'🌿'}[type] || '🌿'; }
+function attachWorldEvents(){
+  document.querySelectorAll('.dpad button[data-dir]').forEach(b=>{
+    b.onclick = ()=>{ SFX.click(); moveWorld(b.dataset.dir); };
+  });
+  document.getElementById('newArea').onclick = ()=>{ SFX.navigate(); state.world.stage++; genWorld(); render(); };
+}
+function moveWorld(dir){
+  const w = state.world;
+  let {x,y} = w.player;
+  if(dir==='up') y = Math.max(0,y-1);
+  if(dir==='down') y = Math.min(w.size-1,y+1);
+  if(dir==='left') x = Math.max(0,x-1);
+  if(dir==='right') x = Math.min(w.size-1,x+1);
+  w.player = {x,y};
+  const tile = w.grid[y][x];
+  if(!tile.cleared){
+    tile.cleared = true;
+    triggerTileEvent(tile.type);
+    return;
+  }
+  render();
+}
+function triggerTileEvent(type){
+  if(type==='monster'){
+    if(state.party.filter(Boolean).length===0){
+      state.toast='モンスターが現れたが、パーティが空のため逃げ帰った。まずパーティを編成しよう。';
+      render();
+      return;
+    }
+    startBattle(state.world.stage, 'world');
+    return;
+  }
+  if(type==='chest'){
+    SFX.chest();
+    if(Math.random() < 0.5){
+      const rarity = weightedRarity();
+      const tpl = pickTemplateByRarity(rarity);
+      const inst = makeInstance(tpl);
+      state.characters.push(inst);
+      state.pullResults = null;
+      state.toast = `宝箱から仲間を発見！ ${inst.icon} ${inst.tplName}（${RARITY[inst.rarity].label}）が加わった。`;
+    } else {
+      const amt = 50 + Math.floor(Math.random()*80);
+      state.stones += amt;
+      state.toast = `宝箱から光の石を ${amt} 個手に入れた。`;
+    }
+    render();
+    return;
+  }
+  if(type==='spring'){
+    state.characters.forEach(c=>{ c.hp = c.maxHp; });
+    state.toast = '癒しの泉で、パーティ全員のHPが全回復した。';
+    render();
+    return;
+  }
+  render();
+}
+
+/* ========================= BATTLE ========================= */
+function startBattle(tier, mode){
+  const partyChars = state.party.filter(Boolean).map(id=>state.characters.find(c=>c.id===id));
+  partyChars.forEach(c=>{ c.hp = c.maxHp; c.skillCd = 0; });
+
+  const enemyCount = Math.min(6, 1 + Math.floor(tier/2));
+  const enemies = [];
+  for(let i=0;i<enemyCount;i++){
+    const t = ENEMY_TEMPLATES[Math.min(ENEMY_TEMPLATES.length-1, Math.floor(Math.random()*Math.min(ENEMY_TEMPLATES.length, tier+2)))];
+    const scale = 1 + (tier-1)*0.18;
+    enemies.push({ id:'e'+i, name:t.name, icon:t.icon, hp: Math.round(t.hp*scale), maxHp: Math.round(t.hp*scale), atk: Math.round(t.atk*scale) });
+  }
+
+  state.battle = {
+    tier, mode, isBoss:false,
+    allies: partyChars, enemies,
+    log: [`第${tier}階層の戦闘が始まった！`],
+    actedIds: new Set(), selectedActorId: null, pendingSkill: false, result: null,
+  };
+  render();
+}
+function startBossBattle(){
+  const partyChars = state.party.filter(Boolean).map(id=>state.characters.find(c=>c.id===id));
+  partyChars.forEach(c=>{ c.hp = c.maxHp; c.skillCd = 0; });
+  const t = BOSS_TEMPLATES[Math.floor(Math.random()*BOSS_TEMPLATES.length)];
+  const scale = 1 + (state.world.stage-1)*0.15;
+  const boss = { id:'boss1', name:t.name, icon:t.icon, hp: Math.round(t.hp*scale), maxHp: Math.round(t.hp*scale), atk: Math.round(t.atk*scale) };
+  state.battle = {
+    tier: state.world.stage, mode:'boss', isBoss:true,
+    allies: partyChars, enemies:[boss],
+    log: [`👑 ボス「${t.name}」が現れた！`],
+    actedIds: new Set(), selectedActorId: null, pendingSkill: false, result: null,
+  };
+  render();
+}
+
+function renderBattle(){
+  const b = state.battle;
+  const alliesHtml = b.allies.map(a=>unitHtml(a, 'ally', b)).join('');
+  const enemiesHtml = b.enemies.map(e=>unitHtml(e, 'enemy', b)).join('');
+
+  let footer = '';
+  if(b.result==='win'){
+    footer = `<div class="card" style="text-align:center;">
+      <div class="display" style="color:var(--gold);font-size:18px;">🏆 勝利！</div>
+      <div class="muted" style="margin:6px 0;">獲得: 💎 ${b.reward.stones} / 経験値 +${b.reward.exp}</div>
+      <button class="btn" id="battleClose">戻る</button>
+    </div>`;
+  } else if(b.result==='lose'){
+    footer = `<div class="card" style="text-align:center;">
+      <div class="display" style="color:var(--hp-low);font-size:18px;">💥 敗北…</div>
+      <div class="muted" style="margin:6px 0;">パーティを立て直して再挑戦しよう。</div>
+      <button class="btn" id="battleClose">戻る</button>
+    </div>`;
+  } else {
+    footer = `<div class="muted" style="text-align:center;margin-bottom:8px;">
+      ${b.pendingSkill ? '対象の敵をタップしてスキルを発動' : b.selectedActorId ? '対象の敵をタップして攻撃' : '味方をタップして行動を選択'}
+    </div>`;
+  }
+
+  return `
+    <h2 class="section-title">${b.isBoss?'👑 ボスラッシュ':'バトル'} - 第${b.tier}階層</h2>
+    <div class="battle-field">
+      <div>
+        <div class="vs-label">ENEMY</div>
+        <div class="team-row">${enemiesHtml}</div>
+      </div>
+      <div class="vs-label">VS</div>
+      <div>
+        <div class="team-row">${alliesHtml}</div>
+        <div class="vs-label">ALLY</div>
+      </div>
+    </div>
+    ${footer}
+    <div class="log-box">${b.log.slice().reverse().map(l=>`<div>${l}</div>`).join('')}</div>
+    ${b.result?`` : `<div class="btn-row" style="margin-top:10px;justify-content:center;">
+      <button class="btn danger" id="fleeBtn">逃げる</button>
+    </div>`}
+  `;
+}
+function unitHtml(u, side, b){
+  const isDead = u.hp<=0;
+  const isActor = b.selectedActorId===u.id;
+  const isTargetable = (side==='enemy' && b.selectedActorId && !isDead);
+  const pct = Math.max(0,Math.round(u.hp/u.maxHp*100));
+  const low = pct<30;
+  let cdText = '';
+  if(side==='ally'){
+    cdText = u.skillCd>0 ? `<div class="cd-text">スキル: あと${u.skillCd}T</div>` : `<div class="cd-text" style="color:var(--gold);">スキル使用可</div>`;
+  }
+  const dispName = side==='ally' ? displayName(u) : (u.name||u.tplName);
+  const dispIcon = side==='ally' ? displayIcon(u) : u.icon;
+  return `<div class="unit ${isDead?'dead':''} ${isActor?'actor-highlight':''} ${isTargetable?'targetable':''}" data-id="${u.id}" data-side="${side}">
+    <div class="icon">${dispIcon}</div>
+    <div class="name">${dispName}${side==='ally'?` Lv${u.level}`:''}</div>
+    <div class="hp-bar-bg"><div class="hp-bar ${low?'low':''}" style="width:${pct}%"></div></div>
+    <div class="hp-text">${Math.max(0,u.hp)}/${u.maxHp}</div>
+    ${cdText}
+  </div>`;
+}
+
+function attachBattleEvents(){
+  const b = state.battle;
+  if(b.result){
+    document.getElementById('battleClose').onclick = ()=>{ SFX.click(); state.battle = null; render(); };
+    return;
+  }
+  const fleeBtn = document.getElementById('fleeBtn');
+  if(fleeBtn) fleeBtn.onclick = ()=>{ SFX.click(); state.battle=null; state.toast='戦闘から離脱した。'; render(); };
+
+  document.querySelectorAll('.unit[data-side="ally"]').forEach(el=>{
+    el.onclick = ()=>{
+      const id = el.dataset.id;
+      const ally = b.allies.find(a=>a.id===id);
+      if(!ally || ally.hp<=0 || b.actedIds.has(id)) return;
+      SFX.click();
+      if(b.selectedActorId===id){
+        if(ally.skillCd===0 && !b.pendingSkill){ b.pendingSkill = true; render(); return; }
+      }
+      b.selectedActorId = id;
+      b.pendingSkill = false;
+      render();
+    };
+  });
+
+  document.querySelectorAll('.unit[data-side="enemy"]').forEach(el=>{
+    el.onclick = ()=>{
+      if(!b.selectedActorId) return;
+      const enemy = b.enemies.find(e=>e.id===el.dataset.id);
+      if(!enemy || enemy.hp<=0) return;
+      const actor = b.allies.find(a=>a.id===b.selectedActorId);
+      performAllyAction(actor, enemy, b.pendingSkill);
+    };
+  });
+}
+
+function performAllyAction(actor, target, useSkill){
+  const b = state.battle;
+  let dmg;
+  const aName = displayName(actor);
+  if(useSkill && actor.skillCd===0){
+    dmg = Math.round(actor.atk * actor.skillMult * (0.9+Math.random()*0.2));
+    actor.skillCd = actor.skillCdMax;
+    SFX.skill();
+    b.log.push(`✨ ${aName} の「${actor.skillName}」！ ${target.name}に${dmg}のダメージ！`);
+  } else {
+    dmg = Math.round(actor.atk * (0.85+Math.random()*0.3));
+    SFX.attack();
+    b.log.push(`⚔️ ${aName} の攻撃！ ${target.name}に${dmg}のダメージ。`);
+  }
+  target.hp = Math.max(0, target.hp - dmg);
+  setTimeout(()=>SFX.hit(), 120);
+  if(target.hp<=0){ b.log.push(`💀 ${target.name} を倒した！`); setTimeout(()=>SFX.defeat(),200); }
+
+  b.actedIds.add(actor.id);
+  b.selectedActorId = null;
+  b.pendingSkill = false;
+
+  if(b.enemies.every(e=>e.hp<=0)){ finishBattle(true); return; }
+
+  const livingAllies = b.allies.filter(a=>a.hp>0);
+  if(livingAllies.every(a=>b.actedIds.has(a.id))) enemyPhase();
+  else render();
+}
+
+function enemyPhase(){
+  const b = state.battle;
+  b.enemies.filter(e=>e.hp>0).forEach(e=>{
+    const living = b.allies.filter(a=>a.hp>0);
+    if(living.length===0) return;
+    const target = living[Math.floor(Math.random()*living.length)];
+    const dmg = Math.round(e.atk*(0.85+Math.random()*0.3));
+    target.hp = Math.max(0, target.hp - dmg);
+    b.log.push(`👾 ${e.name} の攻撃！ ${displayName(target)}に${dmg}のダメージ。`);
+    if(target.hp<=0) b.log.push(`⚠️ ${displayName(target)} が倒れた！`);
+  });
+  setTimeout(()=>SFX.hit(), 100);
+
+  b.allies.forEach(a=>{ if(a.skillCd>0) a.skillCd--; });
+
+  if(b.allies.every(a=>a.hp<=0)){ finishBattle(false); return; }
+  b.actedIds = new Set();
+  render();
+}
+
+function finishBattle(won){
+  const b = state.battle;
+  if(won){
+    const bossMult = b.isBoss ? 4 : 1;
+    const stoneReward = (60 + b.tier*25) * bossMult;
+    const expReward = (20 + b.tier*8) * bossMult;
+    state.stones += stoneReward;
+    b.allies.forEach(a=>gainExp(a, expReward));
+    b.result = 'win';
+    b.reward = {stones:stoneReward, exp:expReward};
+    b.log.push('🏆 敵を全滅させた！');
+    setTimeout(()=>SFX.win(), 150);
+  } else {
+    b.result = 'lose';
+    b.log.push('💥 パーティが全滅した…');
+    setTimeout(()=>SFX.lose(), 150);
+  }
+  render();
+}
+
+/* ========================= INIT ========================= */
+render();
+</script>
+</body>
+</html>
